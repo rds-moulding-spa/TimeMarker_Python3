@@ -1,4 +1,4 @@
-import sys, os, logging, datetime, time, sqlite3, random, threading
+import sys, os, logging, datetime, time, sqlite3, random
 from xmlrpc import client as xcl
 
 from PySide2 import QtCore, QtWidgets, QtQml
@@ -6,16 +6,9 @@ from PySide2 import QtCore, QtWidgets, QtQml
 import config as _C
 import conmgr, uimgr
 
-class ServiceThread(threading.Thread):
-    def run(self):
-        self.exec_()
-
 class Application(QtWidgets.QApplication):
     def __init__(self, *args):
         super(Application, self).__init__(*args)
-
-        #t = 
-
         self._timers = list()
         self.listen = False
         self._UI = uimgr.Window(self)
@@ -91,7 +84,7 @@ class Application(QtWidgets.QApplication):
             timer.destroyed.connect(lambda: ondestroy(*ondestroy_args))
 
         timer.start(interval)
-        self._timers.append(timer) 
+        self._timers.append(timer)
 
         return timer
     
