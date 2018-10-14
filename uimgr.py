@@ -1,9 +1,9 @@
 import datetime, logging, base64
-from PySide2 import QtCore, QtWidgets, QtGui
+from PySide import QtCore, QtGui
 
 logger = logging.getLogger('root')
 
-class PixmapContainer(QtWidgets.QLabel):
+class PixmapContainer(QtGui.QLabel):
     def __init__(self, pixmap, mode='f', parent=None):
         super(PixmapContainer, self).__init__(parent)
         if mode == 'f':
@@ -16,6 +16,7 @@ class PixmapContainer(QtWidgets.QLabel):
 
     def setFromB64(self, data):
         self._pixmap.loadFromData(data)
+        self.resizeEvent(None)
 
     def resizeEvent(self, event):
         w = min(self.width(), self._pixmap.width())
@@ -23,21 +24,23 @@ class PixmapContainer(QtWidgets.QLabel):
         self.setPixmap(self._pixmap.scaled(w, h, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation))
 
 
-class Window(QtWidgets.QStackedWidget):
-    def __init__(self, application):
-        QtWidgets.QStackedWidget.__init__(self)
+class Window(QtGui.QStackedWidget):
+    def __init__(self, application, screenW, screenH):
+        QtGui.QStackedWidget.__init__(self)
         self._APP = application
 
         self.keyboard_buffer = ""
 
-        self.setStyleSheet('''
-                              QLabel#clock   {font-size: 120pt;color: #002266}
-                              QLabel#welcome {font-size: 80pt}
-                              QLabel#statusbar {font-size: 30pt;height:10px;color:white;}
-                           ''')
+        
 
-        self.home = QtWidgets.QWidget()
-        self.login = QtWidgets.QWidget()
+        self.setStyleSheet('''
+                              QLabel#clock   {font-size: %spt;color: #002266}
+                              QLabel#welcome {font-size: %spt}
+                              QLabel#statusbar {font-size: %spt;color:white;}
+                           ''' % (screenW*0.0625, screenW*0.04165, screenW*0.01562 ))
+
+        self.home = QtGui.QWidget()
+        self.login = QtGui.QWidget()
         self.addWidget(self.home)
         self.addWidget(self.login)
         self.init_home()
@@ -52,20 +55,20 @@ class Window(QtWidgets.QStackedWidget):
         self.logo = PixmapContainer('res/img/logo.png')
         self.logo.setAlignment(QtCore.Qt.AlignCenter)
         
-        self.clock = QtWidgets.QLabel(datetime.datetime.now().time().strftime("%H:%M:%S"))
+        self.clock = QtGui.QLabel(datetime.datetime.now().time().strftime("%H:%M:%S"))
         self.clock.setObjectName("clock")
         self.clock.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.welcome = QtWidgets.QLabel("Benvenuto.\nScansiona il tuo Badge.")
+        self.welcome = QtGui.QLabel("Benvenuto.\nScansiona il tuo Badge.")
         self.welcome.setObjectName("welcome")
         self.welcome.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.statusbar = QtWidgets.QLabel("Marcatore di presenza in fase di avviamento....")
+        self.statusbar = QtGui.QLabel("Marcatore di presenza in fase di avviamento....")
         self.statusbar.setObjectName("statusbar")
         self.statusbar.setAlignment(QtCore.Qt.AlignCenter)
         self.statusbar.setMaximumHeight(self.height()*0.15)
 
-        layout = QtWidgets.QVBoxLayout()
+        layout = QtGui.QVBoxLayout()
         layout.addWidget(self.logo)
         layout.addWidget(self.clock)
         layout.addWidget(self.welcome)
@@ -77,11 +80,11 @@ class Window(QtWidgets.QStackedWidget):
         self.user_image = PixmapContainer(None)
         self.user_image.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.login_name = QtWidgets.QLabel("Benvenuto.\nScansiona il tuo Badge.")
+        self.login_name = QtGui.QLabel("Benvenuto.\nScansiona il tuo Badge.")
         self.login_name.setObjectName("welcome")
         self.login_name.setAlignment(QtCore.Qt.AlignCenter)
 
-        layout = QtWidgets.QVBoxLayout()
+        layout = QtGui.QVBoxLayout()
         layout.addWidget(self.user_image)
         layout.addWidget(self.login_name)
 
@@ -117,7 +120,7 @@ class Window(QtWidgets.QStackedWidget):
                 except ValueError:
                     self.send_kb()                    
 
-        return QtWidgets.QWidget.eventFilter(self, widget, event)
+        return QtGui.QWidget.eventFilter(self, widget, event)
 
     def send_kb(self):
         if self.keyboard_buffer:
@@ -165,10 +168,10 @@ class Window(QtWidgets.QStackedWidget):
                 msg = "Inizializzazione, connesso al server..."
                 color = "blue"
             elif status == 3:
-                msg = "Credenziali invalide, database assenti. Il Marcatempo sarà inutilizzabile."
+                msg = "Credenziali invalide, database assenti. Il Marcatempo sara' inutilizzabile."
                 color = "red"
             else:
-                msg = "Errore imprevisto. Il Marcatempo sarà inutilizzabile."
+                msg = "Errore imprevisto. Il Marcatempo sara' inutilizzabile."
                 color = "red"
         
         self.statusbar.setStyleSheet("QLabel {background-color:%s}" % color)

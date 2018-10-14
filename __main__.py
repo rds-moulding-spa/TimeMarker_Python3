@@ -1,19 +1,32 @@
 import sys, os, logging, datetime, time, sqlite3, random
-from xmlrpc import client as xcl
+import xmlrpclib as xcl
 
-from PySide2 import QtCore, QtWidgets, QtQml
+from PySide import QtCore, QtGui
+from threading import Thread
 
 import config as _C
 import conmgr, uimgr
 
-class Application(QtWidgets.QApplication):
+class ServiceThread(QtCore.QThread):
+    def run(self):
+        self.exec_()
+    
+
+class Application(QtGui.QApplication):
     def __init__(self, *args):
         super(Application, self).__init__(*args)
+
+        t = self.desktop().screenGeometry()
+        
         self._timers = list()
         self.listen = False
-        self._UI = uimgr.Window(self)
+        self.serviceThread = ServiceThread() if _C.config['service_thread'] else None
+        if self.serviceThread:
+            self.serviceThread.start()
+
+        self._UI = uimgr.Window(self, t.width(), t.height())
         self._CON = conmgr.ConnectionManager(self, *_C.get_cparam())
-        self.register_timer("uihandler", self._UI.tick, [], interval=400)
+        self.register_timer("uihandler", self._UI.tick, [], interval=400)        
         
 
     def start_listen(self):
@@ -23,8 +36,8 @@ class Application(QtWidgets.QApplication):
     def receive_barcode(self, barcode):
         barcode = str(barcode)
         if len(barcode) != 10:
-            logging.warning("Lunghezza rfid scorretta!")
-            return
+            logging.warning("Lunghezza rfid %s scorretta!", barcode)
+            barcode = barcode.zfill(10)
 
         if self.listen == False:
             return
@@ -50,7 +63,7 @@ class Application(QtWidgets.QApplication):
 
 
 
-    def register_timer(self, name, slot, args=[], ondestroy=None, ondestroy_args=[], onsuccess_destroy=False, count=0, interval=_C.config['tick_time']):
+    def register_timer(self, name, slot, args=[], ondestroy=None, ondestroy_args=[], onsuccess_destroy=False, count=0, interval=_C.config['tick_time'], service=False):
         if count < 0:
             raise ValueError("Il numero di iterazioni deve essere zero (infinito) o maggiore di zero!")
         
@@ -61,12 +74,13 @@ class Application(QtWidgets.QApplication):
         timer.name = name
         
         if count > 0:
-            counter = 0
+            class context:
+                counter = 0
+
             def handler():
-                nonlocal counter
-                counter += 1
+                context.counter += 1
                 a = slot(*args)
-                if (onsuccess_destroy and a) or (counter >= count):
+                if (onsuccess_destroy and a) or (context.counter >= count):
                     timer.stop()
                     self._timers.remove(timer)
                     timer.deleteLater()
@@ -82,8 +96,12 @@ class Application(QtWidgets.QApplication):
         timer.timeout.connect(handler)
         if ondestroy:
             timer.destroyed.connect(lambda: ondestroy(*ondestroy_args))
+        
 
         timer.start(interval)
+        if service:
+            timer.moveToThread(self.serviceThread)
+
         self._timers.append(timer)
 
         return timer
@@ -143,6 +161,6 @@ if __name__ == "__main__":
 
     #if not _ENG.rootObjects():
     #    sys.exit(-1)
-    _APP._UI.show() 
+    _APP._UI.show()
     sys.exit(_APP.exec_())
 

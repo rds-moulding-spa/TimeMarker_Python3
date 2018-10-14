@@ -5,17 +5,18 @@ config = {
     'marker_id':        1,
     'logfile':          'logging.log',
     #Connection
-    'server_address':   'http://127.0.0.1',
+    'server_address':   'http://10.15.0.112',
     'server_port':      '8069',
-    'db':               'db',
-    'username':         'user@foo.com',
-    'password':         'foo',
+    'db':               'rdsdb',
+    'username':         'alfredo.salata@rdsmoulding.com',
+    'password':         'ace0896AC21!!',
     #UI
     'ui_style':         'Material',
     #CLOCKS
     'tick_time':        0.2,#s
     #Datetime
-    'datetime_format':  "%Y-%m-%d %H:%M:%S"
+    'datetime_format':  "%Y-%m-%d %H:%M:%S",
+    'service_thread':   True
 }
 
 # RISERVATO
